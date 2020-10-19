@@ -1,0 +1,58 @@
+options:
+	prefix: &8[&2&lSouthCaptcha&8]&a
+	SecurityLevel: 1
+	# SecurityLevel 1 = math, SecurityLevel 2 = Math + Sneak
+	time: 1
+on join:
+	player does not have permission "captcha.bypass":
+		set {asking.%player%} to true
+		set {r1.%player%} to random integer between 1 and 20
+		set {r2.%player%} to random integer between 1 and 20
+		send title "{@prefix} Complete the captcha" with subtitle "&7What is %{r1.%player%}% + %{r2.%player%}%? &o(Type in chat)" to player
+		send ""
+		send "{@prefix} What is %{r1.%player%}% + %{r2.%player%}%?"
+		send ""	
+		set {askedtime.%player%} to now
+		wait 20 seconds
+		{asking.%player%} is true
+		kick the player because "{@prefix} Failed the captcha!"
+	else:
+		send "{@prefix} You do not need to complete the captcha because you are an operator"
+on command:
+	{asking.%player%} is true
+	kick the player because "{@prefix} Failed the captcha!"
+on chat:
+	{asking.%player%} is true
+	cancel event
+	set {_add} to {r1.%player%} + {r2.%player%}
+	message is "%{_add}%":
+		difference between {askedtime.%player%} and now < {@time} seconds:
+			kick the player because "{@prefix} You answered a little quickly. Come back and try again."
+		else:
+			send ""
+			send "{@prefix} You passed the captcha!"
+			send ""
+			set {asking.%player%} to false
+			{@SecurityLevel} is 2
+			set {sneaks.%player%} to 0
+			set {asking.%player%} to true
+			send ""
+			send "{@prefix} To further confirm your humanity, please toggle sneak 3 times (sneak, unsneak, sneak)"
+			send ""
+			
+	else:
+		kick the player because "{@prefix} Failed the captcha!"	
+on sneak toggle:
+	add 1 to {sneaks.%player%}
+	{sneaks.%player%} = 3
+	set {asking.%player%} to false
+	send ""
+	send "{@prefix} You passed the captcha!"
+	send ""
+on damage:
+	{asking.%victim%} is true:
+		cancel event
+		send "{@prefix} This player still needs to complete the captcha!" where [{asking.%victim%} is true]
+	{asking.%attacker%} is true:
+		cancel event
+		send "{@prefix} You need to complete the captcha!" where [{asking.%attacker%} is true]
